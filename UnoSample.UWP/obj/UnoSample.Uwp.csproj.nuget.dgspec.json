@@ -1,0 +1,107 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\src\\UnoSample\\UnoSample.UWP\\UnoSample.Uwp.csproj": {}
+  },
+  "projects": {
+    "C:\\src\\UnoSample\\UnoSample.UWP\\UnoSample.Uwp.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\src\\UnoSample\\UnoSample.UWP\\UnoSample.Uwp.csproj",
+        "projectName": "UnoSample",
+        "projectPath": "C:\\src\\UnoSample\\UnoSample.UWP\\UnoSample.Uwp.csproj",
+        "packagesPath": "C:\\Users\\SaadSharif\\.nuget\\packages\\",
+        "outputPath": "C:\\src\\UnoSample\\UnoSample.UWP\\obj\\",
+        "projectStyle": "PackageReference",
+        "skipContentFileWrite": true,
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
+          "C:\\Program Files (x86)\\Microsoft SDKs\\UWPNuGetPackages\\"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\SaadSharif\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "uap10.0.17763"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "uap10.0.17763": {
+            "projectReferences": {}
+          }
+        }
+      },
+      "frameworks": {
+        "uap10.0.17763": {
+          "dependencies": {
+            "Microsoft.Extensions.Logging.Debug": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "Microsoft.NETCore.UniversalWindowsPlatform": {
+              "target": "Package",
+              "version": "[6.2.11, )"
+            },
+            "Microsoft.UI.Xaml": {
+              "target": "Package",
+              "version": "[2.6.2, )"
+            },
+            "SkiaSharp": {
+              "target": "Package",
+              "version": "[2.88.6, )"
+            },
+            "SkiaSharp.Svg": {
+              "target": "Package",
+              "version": "[1.60.0, )"
+            },
+            "SkiaSharp.Views": {
+              "target": "Package",
+              "version": "[2.88.6, )"
+            },
+            "Uno.Core.Extensions.Logging.Singleton": {
+              "target": "Package",
+              "version": "[4.0.1, )"
+            },
+            "Uno.UI": {
+              "target": "Package",
+              "version": "[4.10.22, )"
+            }
+          },
+          "imports": [
+            "net461"
+          ],
+          "assetTargetFallback": true,
+          "warn": true
+        }
+      },
+      "runtimes": {
+        "win10-arm": {
+          "#import": []
+        },
+        "win10-arm-aot": {
+          "#import": []
+        },
+        "win10-arm64-aot": {
+          "#import": []
+        },
+        "win10-x64": {
+          "#import": []
+        },
+        "win10-x64-aot": {
+          "#import": []
+        },
+        "win10-x86": {
+          "#import": []
+        },
+        "win10-x86-aot": {
+          "#import": []
+        }
+      }
+    }
+  }
+}

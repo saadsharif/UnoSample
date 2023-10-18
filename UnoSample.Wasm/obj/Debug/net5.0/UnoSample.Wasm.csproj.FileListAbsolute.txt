@@ -1,0 +1,6 @@
+C:\src\UnoSample\UnoSample.Wasm\obj\Debug\net5.0\UnoSample.Wasm.csproj.AssemblyReference.cache
+C:\src\UnoSample\UnoSample.Wasm\obj\Debug\net5.0\UnoSample.Wasm.d-bfalse.GeneratedMSBuildEditorConfig.editorconfig
+C:\src\UnoSample\UnoSample.Wasm\obj\Debug\net5.0\UnoSample.Wasm.AssemblyInfoInputs.cache
+C:\src\UnoSample\UnoSample.Wasm\obj\Debug\net5.0\UnoSample.Wasm.AssemblyInfo.cs
+C:\src\UnoSample\UnoSample.Wasm\obj\Debug\net5.0\UnoSample.Wasm.csproj.CoreCompileInputs.cache
+C:\src\UnoSample\UnoSample.Wasm\obj\Debug\net5.0\UnoSample.Wasm.MvcApplicationPartsAssemblyInfo.cache

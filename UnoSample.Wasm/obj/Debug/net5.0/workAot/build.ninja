@@ -1,0 +1,608 @@
+mono_sdkdir = C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release
+emscripten_sdkdir = C:\Users\SaadSharif\.uno\emsdk\emsdk-2.0.23\emsdk
+tool_prefix = C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release
+appdir = C:\src\UnoSample\UnoSample.Wasm\obj\Debug\net5.0\dist_work
+builddir = .
+runtimepack_dir = C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm
+wasm_runtime_dir = C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native
+runtime_libdir = $runtimepack_dir/native
+deploy_prefix = managed
+bcl_dir = C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\wasm-bcl\wasm
+bcl_facades_dir = C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\wasm-bcl\wasm\Facades
+framework_dir = C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\framework
+tools_dir = C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\tools
+emsdk_env = cd
+wasm_core_bindings = $builddir/corebindings.o
+wasm_core_support = C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native\binding_support.js
+wasm_core_support_library = --js-library C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native\binding_support.js --js-library C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native\pal_random.js 
+cross = $runtimepack_dir/native/cross/browser-wasm/mono-aot-cross.exe
+emcc = $$env:PYTHONUTF8=1; emcc 
+wasm_opt = $emscripten_sdkdir/upstream/bin/wasm-opt
+emcc_flags = -DENABLE_METADATA_UPDATE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ALLOW_TABLE_GROWTH=1 -s ALLOW_MEMORY_GROWTH=1 -s TOTAL_MEMORY=134217728 -s NO_EXIT_RUNTIME=1 -s ERROR_ON_UNDEFINED_SYMBOLS=1 -s \"EXTRA_EXPORTED_RUNTIME_METHODS=['ccall', 'FS_createPath', 'FS_createDataFile', 'cwrap', 'setValue', 'getValue', 'UTF8ToString', 'UTF8ArrayToString', 'addFunction']\" -s \"EXPORTED_FUNCTIONS=['_putchar']\" -s \"DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=['memset']\"  -s USE_ZLIB=1 -s FORCE_FILESYSTEM=1 -flto=thin -DGEN_PINVOKE -IC:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native -emit-llvm   -l idbfs.js  
+aot_base_args = llvmonly,asmonly,no-opt,static,direct-icalls,deterministic,nodebug,llvm-path="$emscripten_sdkdir/upstream/bin",
+rule aot
+  command = cmd /c set "MONO_PATH=$mono_path" && $cross --debug  -O=gsharedvt --aot=$aot_args,$aot_base_args,depfile=$depfile,llvm-outfile=$outfile $src_file
+  description = [AOT] $src_file -> $outfile
+rule aot-instances
+  command = cmd /c set "MONO_PATH=$mono_path" && $cross --debug  -O=gsharedvt --aot=$aot_base_args,llvm-outfile=$outfile,dedup-include=$dedup_image $src_files
+  description = [AOT-INSTANCES] $outfile
+rule mkdir
+  command = powershell mkdir -Force -p '$out' | Out-Null
+rule cp
+  command = powershell  copy '$in' '$out'
+rule cpifdiff
+  command = powershell  copy '$in' '$out'
+  restat = true
+  description = [CPIFDIFF] $in -> $out
+rule create-emsdk-env
+  command = powershell "$emscripten_sdkdir/emsdk" construct_env > $out
+rule emcc
+  command = powershell "$emcc $emcc_flags $flags -Oz -c -o $out $in"
+  description = [EMCC] $in -> $out
+rule emcc-link
+  command = powershell "$emcc $emcc_flags -O0 -flto=thin  -o \"$out_js\" --js-library C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native/library_mono.js --js-library C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native/dotnet_support.js --js-library C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native\binding_support.js --js-library C:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native\pal_random.js  $in"  ; "$wasm_opt" --strip-dwarf '$out_wasm' -o '$out_wasm'
+  description = [EMCC-LINK] $in -> $out_js
+rule linker
+  command = powershell dotnet $tools_dir/illink.dll '@C:\src\UnoSample\UnoSample.Wasm\obj\Debug\net5.0\workAot\linker.rsp' ; dotnet $tools_dir\wasm-tuner.dll --gen-empty-assemblies $out
+  description = [IL-LINK]
+rule aot-instances-dll
+  command = cmd /c "dotnet new classlib -o aot-instances && del aot-instances\*.cs && dotnet build aot-instances\aot-instances.csproj /r -p:Deterministic=true -p:ImplicitUsings=false -p:TargetFramework=net5.0 /p:OutputPath=..\linker-out"
+rule gen-runtime-icall-table
+  command = $cross --print-icall-table > $out
+rule gen-icall-table
+  command = powershell dotnet $tools_dir\wasm-tuner.dll --gen-icall-table $out $runtime_table $in
+rule gen-pinvoke-table
+  command = powershell dotnet $tools_dir\wasm-tuner.dll --gen-pinvoke-table $out $pinvoke_libs $in
+rule ilstrip
+  command = powershell  copy $in $out; mono $tools_dir/mono-cil-strip.exe -q $out
+  description = [IL-STRIP]
+build $appdir: mkdir
+build $appdir/$deploy_prefix: mkdir
+build $appdir/runtime.js: cpifdiff $builddir/runtime.js
+build $appdir/mono-config.js: cpifdiff $builddir/mono-config.js
+build $builddir/driver.c: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native\driver.c
+build $builddir/driver-gen.c: cpifdiff $builddir/driver-gen.c.in
+build $builddir/pinvoke.c: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native\pinvoke.c
+build $builddir/pinvoke.h: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native\pinvoke.h
+build $builddir/corebindings.c: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native\corebindings.c
+build $builddir/corebindings.o: emcc $builddir/corebindings.c | $emsdk_env
+  flags = -I$runtimepack_dir/native/include/mono-2.0
+build $emsdk_env: create-emsdk-env
+build $builddir/driver.o: emcc $builddir/driver.c | $emsdk_env $builddir/driver-gen.c  $builddir/pinvoke-table.h
+  flags =  -DCORE_BINDINGS  -DGEN_PINVOKE  -DENABLE_NETCORE  -DDRIVER_GEN=1 -I$runtimepack_dir/native/include/mono-2.0
+build $builddir/pinvoke.o: emcc $builddir/pinvoke.c | $emsdk_env  $builddir/pinvoke-table.h
+  flags =  -DCORE_BINDINGS  -DGEN_PINVOKE  -DENABLE_NETCORE  -DDRIVER_GEN=1 -I$runtimepack_dir/native/include/mono-2.0
+build $builddir/Uno.Wasm.TimezoneData.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.wasm.bootstrap\3.3.1\tools\support\Uno.Wasm.TimezoneData.dll
+build $builddir/Uno.Wasm.TimezoneData.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.wasm.bootstrap\3.3.1\tools\support\Uno.Wasm.TimezoneData.pdb
+build $appdir/$deploy_prefix/Uno.Wasm.TimezoneData.dll: cpifdiff $builddir\Uno.Wasm.TimezoneData.dll
+build $appdir/$deploy_prefix/Uno.Wasm.TimezoneData.pdb: cpifdiff $builddir/Uno.Wasm.TimezoneData.pdb
+build $builddir/netstandard.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\netstandard.dll
+build $builddir/netstandard.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\netstandard.pdb
+build $appdir/$deploy_prefix/netstandard.dll: cpifdiff $builddir\netstandard.dll
+build $appdir/$deploy_prefix/netstandard.pdb: cpifdiff $builddir/netstandard.pdb
+build $builddir/System.Runtime.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.dll
+build $builddir/System.Runtime.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.pdb
+build $appdir/$deploy_prefix/System.Runtime.dll: cpifdiff $builddir\System.Runtime.dll
+build $appdir/$deploy_prefix/System.Runtime.pdb: cpifdiff $builddir/System.Runtime.pdb
+build $builddir/System.Private.CoreLib.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.CoreLib.dll
+build $builddir/System.Private.CoreLib.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.CoreLib.pdb
+build $appdir/$deploy_prefix/System.Private.CoreLib.dll: cpifdiff $builddir\System.Private.CoreLib.dll
+build $appdir/$deploy_prefix/System.Private.CoreLib.pdb: cpifdiff $builddir/System.Private.CoreLib.pdb
+build $builddir/System.Private.Uri.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.Uri.dll
+build $builddir/System.Private.Uri.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.Uri.pdb
+build $appdir/$deploy_prefix/System.Private.Uri.dll: cpifdiff $builddir\System.Private.Uri.dll
+build $appdir/$deploy_prefix/System.Private.Uri.pdb: cpifdiff $builddir/System.Private.Uri.pdb
+build $builddir/System.IO.MemoryMappedFiles.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.MemoryMappedFiles.dll
+build $builddir/System.IO.MemoryMappedFiles.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.MemoryMappedFiles.pdb
+build $appdir/$deploy_prefix/System.IO.MemoryMappedFiles.dll: cpifdiff $builddir\System.IO.MemoryMappedFiles.dll
+build $appdir/$deploy_prefix/System.IO.MemoryMappedFiles.pdb: cpifdiff $builddir/System.IO.MemoryMappedFiles.pdb
+build $builddir/System.Runtime.InteropServices.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.InteropServices.dll
+build $builddir/System.Runtime.InteropServices.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.InteropServices.pdb
+build $appdir/$deploy_prefix/System.Runtime.InteropServices.dll: cpifdiff $builddir\System.Runtime.InteropServices.dll
+build $appdir/$deploy_prefix/System.Runtime.InteropServices.pdb: cpifdiff $builddir/System.Runtime.InteropServices.pdb
+build $builddir/System.IO.Pipes.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.Pipes.dll
+build $builddir/System.IO.Pipes.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.Pipes.pdb
+build $appdir/$deploy_prefix/System.IO.Pipes.dll: cpifdiff $builddir\System.IO.Pipes.dll
+build $appdir/$deploy_prefix/System.IO.Pipes.pdb: cpifdiff $builddir/System.IO.Pipes.pdb
+build $builddir/System.Diagnostics.Process.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.Process.dll
+build $builddir/System.Diagnostics.Process.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.Process.pdb
+build $appdir/$deploy_prefix/System.Diagnostics.Process.dll: cpifdiff $builddir\System.Diagnostics.Process.dll
+build $appdir/$deploy_prefix/System.Diagnostics.Process.pdb: cpifdiff $builddir/System.Diagnostics.Process.pdb
+build $builddir/System.ComponentModel.Primitives.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.ComponentModel.Primitives.dll
+build $builddir/System.ComponentModel.Primitives.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.ComponentModel.Primitives.pdb
+build $appdir/$deploy_prefix/System.ComponentModel.Primitives.dll: cpifdiff $builddir\System.ComponentModel.Primitives.dll
+build $appdir/$deploy_prefix/System.ComponentModel.Primitives.pdb: cpifdiff $builddir/System.ComponentModel.Primitives.pdb
+build $builddir/System.Threading.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.dll
+build $builddir/System.Threading.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.pdb
+build $appdir/$deploy_prefix/System.Threading.dll: cpifdiff $builddir\System.Threading.dll
+build $appdir/$deploy_prefix/System.Threading.pdb: cpifdiff $builddir/System.Threading.pdb
+build $builddir/System.ComponentModel.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.ComponentModel.dll
+build $builddir/System.ComponentModel.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.ComponentModel.pdb
+build $appdir/$deploy_prefix/System.ComponentModel.dll: cpifdiff $builddir\System.ComponentModel.dll
+build $appdir/$deploy_prefix/System.ComponentModel.pdb: cpifdiff $builddir/System.ComponentModel.pdb
+build $builddir/System.Collections.NonGeneric.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Collections.NonGeneric.dll
+build $builddir/System.Collections.NonGeneric.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Collections.NonGeneric.pdb
+build $appdir/$deploy_prefix/System.Collections.NonGeneric.dll: cpifdiff $builddir\System.Collections.NonGeneric.dll
+build $appdir/$deploy_prefix/System.Collections.NonGeneric.pdb: cpifdiff $builddir/System.Collections.NonGeneric.pdb
+build $builddir/System.ObjectModel.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.ObjectModel.dll
+build $builddir/System.ObjectModel.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.ObjectModel.pdb
+build $appdir/$deploy_prefix/System.ObjectModel.dll: cpifdiff $builddir\System.ObjectModel.dll
+build $appdir/$deploy_prefix/System.ObjectModel.pdb: cpifdiff $builddir/System.ObjectModel.pdb
+build $builddir/System.Collections.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Collections.dll
+build $builddir/System.Collections.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Collections.pdb
+build $appdir/$deploy_prefix/System.Collections.dll: cpifdiff $builddir\System.Collections.dll
+build $appdir/$deploy_prefix/System.Collections.pdb: cpifdiff $builddir/System.Collections.pdb
+build $builddir/System.Diagnostics.FileVersionInfo.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.FileVersionInfo.dll
+build $builddir/System.Diagnostics.FileVersionInfo.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.FileVersionInfo.pdb
+build $appdir/$deploy_prefix/System.Diagnostics.FileVersionInfo.dll: cpifdiff $builddir\System.Diagnostics.FileVersionInfo.dll
+build $appdir/$deploy_prefix/System.Diagnostics.FileVersionInfo.pdb: cpifdiff $builddir/System.Diagnostics.FileVersionInfo.pdb
+build $builddir/System.Collections.Specialized.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Collections.Specialized.dll
+build $builddir/System.Collections.Specialized.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Collections.Specialized.pdb
+build $appdir/$deploy_prefix/System.Collections.Specialized.dll: cpifdiff $builddir\System.Collections.Specialized.dll
+build $appdir/$deploy_prefix/System.Collections.Specialized.pdb: cpifdiff $builddir/System.Collections.Specialized.pdb
+build $builddir/System.Security.Cryptography.X509Certificates.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Cryptography.X509Certificates.dll
+build $builddir/System.Security.Cryptography.X509Certificates.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Cryptography.X509Certificates.pdb
+build $appdir/$deploy_prefix/System.Security.Cryptography.X509Certificates.dll: cpifdiff $builddir\System.Security.Cryptography.X509Certificates.dll
+build $appdir/$deploy_prefix/System.Security.Cryptography.X509Certificates.pdb: cpifdiff $builddir/System.Security.Cryptography.X509Certificates.pdb
+build $builddir/System.Security.Cryptography.Algorithms.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Cryptography.Algorithms.dll
+build $builddir/System.Security.Cryptography.Algorithms.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Cryptography.Algorithms.pdb
+build $appdir/$deploy_prefix/System.Security.Cryptography.Algorithms.dll: cpifdiff $builddir\System.Security.Cryptography.Algorithms.dll
+build $appdir/$deploy_prefix/System.Security.Cryptography.Algorithms.pdb: cpifdiff $builddir/System.Security.Cryptography.Algorithms.pdb
+build $builddir/System.Memory.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Memory.dll
+build $builddir/System.Memory.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Memory.pdb
+build $appdir/$deploy_prefix/System.Memory.dll: cpifdiff $builddir\System.Memory.dll
+build $appdir/$deploy_prefix/System.Memory.pdb: cpifdiff $builddir/System.Memory.pdb
+build $builddir/System.Security.Cryptography.Primitives.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Cryptography.Primitives.dll
+build $builddir/System.Security.Cryptography.Primitives.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Cryptography.Primitives.pdb
+build $appdir/$deploy_prefix/System.Security.Cryptography.Primitives.dll: cpifdiff $builddir\System.Security.Cryptography.Primitives.dll
+build $appdir/$deploy_prefix/System.Security.Cryptography.Primitives.pdb: cpifdiff $builddir/System.Security.Cryptography.Primitives.pdb
+build $builddir/System.Security.Cryptography.Encoding.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Cryptography.Encoding.dll
+build $builddir/System.Security.Cryptography.Encoding.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Cryptography.Encoding.pdb
+build $appdir/$deploy_prefix/System.Security.Cryptography.Encoding.dll: cpifdiff $builddir\System.Security.Cryptography.Encoding.dll
+build $appdir/$deploy_prefix/System.Security.Cryptography.Encoding.pdb: cpifdiff $builddir/System.Security.Cryptography.Encoding.pdb
+build $builddir/System.Net.Primitives.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Primitives.dll
+build $builddir/System.Net.Primitives.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Primitives.pdb
+build $appdir/$deploy_prefix/System.Net.Primitives.dll: cpifdiff $builddir\System.Net.Primitives.dll
+build $appdir/$deploy_prefix/System.Net.Primitives.pdb: cpifdiff $builddir/System.Net.Primitives.pdb
+build $builddir/System.Diagnostics.Tracing.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.Tracing.dll
+build $builddir/System.Diagnostics.Tracing.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.Tracing.pdb
+build $appdir/$deploy_prefix/System.Diagnostics.Tracing.dll: cpifdiff $builddir\System.Diagnostics.Tracing.dll
+build $appdir/$deploy_prefix/System.Diagnostics.Tracing.pdb: cpifdiff $builddir/System.Diagnostics.Tracing.pdb
+build $builddir/Microsoft.Win32.Primitives.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\Microsoft.Win32.Primitives.dll
+build $builddir/Microsoft.Win32.Primitives.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\Microsoft.Win32.Primitives.pdb
+build $appdir/$deploy_prefix/Microsoft.Win32.Primitives.dll: cpifdiff $builddir\Microsoft.Win32.Primitives.dll
+build $appdir/$deploy_prefix/Microsoft.Win32.Primitives.pdb: cpifdiff $builddir/Microsoft.Win32.Primitives.pdb
+build $builddir/System.Collections.Concurrent.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Collections.Concurrent.dll
+build $builddir/System.Collections.Concurrent.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Collections.Concurrent.pdb
+build $appdir/$deploy_prefix/System.Collections.Concurrent.dll: cpifdiff $builddir\System.Collections.Concurrent.dll
+build $appdir/$deploy_prefix/System.Collections.Concurrent.pdb: cpifdiff $builddir/System.Collections.Concurrent.pdb
+build $builddir/System.ComponentModel.TypeConverter.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.ComponentModel.TypeConverter.dll
+build $builddir/System.ComponentModel.TypeConverter.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.ComponentModel.TypeConverter.pdb
+build $appdir/$deploy_prefix/System.ComponentModel.TypeConverter.dll: cpifdiff $builddir\System.ComponentModel.TypeConverter.dll
+build $appdir/$deploy_prefix/System.ComponentModel.TypeConverter.pdb: cpifdiff $builddir/System.ComponentModel.TypeConverter.pdb
+build $builddir/System.Runtime.Loader.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Loader.dll
+build $builddir/System.Runtime.Loader.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Loader.pdb
+build $appdir/$deploy_prefix/System.Runtime.Loader.dll: cpifdiff $builddir\System.Runtime.Loader.dll
+build $appdir/$deploy_prefix/System.Runtime.Loader.pdb: cpifdiff $builddir/System.Runtime.Loader.pdb
+build $builddir/System.Net.Security.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Security.dll
+build $builddir/System.Net.Security.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Security.pdb
+build $appdir/$deploy_prefix/System.Net.Security.dll: cpifdiff $builddir\System.Net.Security.dll
+build $appdir/$deploy_prefix/System.Net.Security.pdb: cpifdiff $builddir/System.Net.Security.pdb
+build $builddir/System.Drawing.Primitives.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Drawing.Primitives.dll
+build $builddir/System.Drawing.Primitives.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Drawing.Primitives.pdb
+build $appdir/$deploy_prefix/System.Drawing.Primitives.dll: cpifdiff $builddir\System.Drawing.Primitives.dll
+build $appdir/$deploy_prefix/System.Drawing.Primitives.pdb: cpifdiff $builddir/System.Drawing.Primitives.pdb
+build $builddir/System.Numerics.Vectors.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Numerics.Vectors.dll
+build $builddir/System.Numerics.Vectors.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Numerics.Vectors.pdb
+build $appdir/$deploy_prefix/System.Numerics.Vectors.dll: cpifdiff $builddir\System.Numerics.Vectors.dll
+build $appdir/$deploy_prefix/System.Numerics.Vectors.pdb: cpifdiff $builddir/System.Numerics.Vectors.pdb
+build $builddir/System.Linq.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Linq.dll
+build $builddir/System.Linq.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Linq.pdb
+build $appdir/$deploy_prefix/System.Linq.dll: cpifdiff $builddir\System.Linq.dll
+build $appdir/$deploy_prefix/System.Linq.pdb: cpifdiff $builddir/System.Linq.pdb
+build $builddir/System.Text.RegularExpressions.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Text.RegularExpressions.dll
+build $builddir/System.Text.RegularExpressions.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Text.RegularExpressions.pdb
+build $appdir/$deploy_prefix/System.Text.RegularExpressions.dll: cpifdiff $builddir\System.Text.RegularExpressions.dll
+build $appdir/$deploy_prefix/System.Text.RegularExpressions.pdb: cpifdiff $builddir/System.Text.RegularExpressions.pdb
+build $builddir/System.Reflection.Emit.ILGeneration.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.Emit.ILGeneration.dll
+build $builddir/System.Reflection.Emit.ILGeneration.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.Emit.ILGeneration.pdb
+build $appdir/$deploy_prefix/System.Reflection.Emit.ILGeneration.dll: cpifdiff $builddir\System.Reflection.Emit.ILGeneration.dll
+build $appdir/$deploy_prefix/System.Reflection.Emit.ILGeneration.pdb: cpifdiff $builddir/System.Reflection.Emit.ILGeneration.pdb
+build $builddir/System.Reflection.Emit.Lightweight.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.Emit.Lightweight.dll
+build $builddir/System.Reflection.Emit.Lightweight.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.Emit.Lightweight.pdb
+build $appdir/$deploy_prefix/System.Reflection.Emit.Lightweight.dll: cpifdiff $builddir\System.Reflection.Emit.Lightweight.dll
+build $appdir/$deploy_prefix/System.Reflection.Emit.Lightweight.pdb: cpifdiff $builddir/System.Reflection.Emit.Lightweight.pdb
+build $builddir/System.Reflection.Primitives.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.Primitives.dll
+build $builddir/System.Reflection.Primitives.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.Primitives.pdb
+build $appdir/$deploy_prefix/System.Reflection.Primitives.dll: cpifdiff $builddir\System.Reflection.Primitives.dll
+build $appdir/$deploy_prefix/System.Reflection.Primitives.pdb: cpifdiff $builddir/System.Reflection.Primitives.pdb
+build $builddir/System.Runtime.Serialization.Formatters.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Serialization.Formatters.dll
+build $builddir/System.Runtime.Serialization.Formatters.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Serialization.Formatters.pdb
+build $appdir/$deploy_prefix/System.Runtime.Serialization.Formatters.dll: cpifdiff $builddir\System.Runtime.Serialization.Formatters.dll
+build $appdir/$deploy_prefix/System.Runtime.Serialization.Formatters.pdb: cpifdiff $builddir/System.Runtime.Serialization.Formatters.pdb
+build $builddir/System.Resources.Writer.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Resources.Writer.dll
+build $builddir/System.Resources.Writer.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Resources.Writer.pdb
+build $appdir/$deploy_prefix/System.Resources.Writer.dll: cpifdiff $builddir\System.Resources.Writer.dll
+build $appdir/$deploy_prefix/System.Resources.Writer.pdb: cpifdiff $builddir/System.Resources.Writer.pdb
+build $builddir/System.Xml.XDocument.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Xml.XDocument.dll
+build $builddir/System.Xml.XDocument.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Xml.XDocument.pdb
+build $appdir/$deploy_prefix/System.Xml.XDocument.dll: cpifdiff $builddir\System.Xml.XDocument.dll
+build $appdir/$deploy_prefix/System.Xml.XDocument.pdb: cpifdiff $builddir/System.Xml.XDocument.pdb
+build $builddir/System.Private.Xml.Linq.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.Xml.Linq.dll
+build $builddir/System.Private.Xml.Linq.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.Xml.Linq.pdb
+build $appdir/$deploy_prefix/System.Private.Xml.Linq.dll: cpifdiff $builddir\System.Private.Xml.Linq.dll
+build $appdir/$deploy_prefix/System.Private.Xml.Linq.pdb: cpifdiff $builddir/System.Private.Xml.Linq.pdb
+build $builddir/System.Private.Xml.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.Xml.dll
+build $builddir/System.Private.Xml.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.Xml.pdb
+build $appdir/$deploy_prefix/System.Private.Xml.dll: cpifdiff $builddir\System.Private.Xml.dll
+build $appdir/$deploy_prefix/System.Private.Xml.pdb: cpifdiff $builddir/System.Private.Xml.pdb
+build $builddir/System.Diagnostics.TraceSource.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.TraceSource.dll
+build $builddir/System.Diagnostics.TraceSource.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.TraceSource.pdb
+build $appdir/$deploy_prefix/System.Diagnostics.TraceSource.dll: cpifdiff $builddir\System.Diagnostics.TraceSource.dll
+build $appdir/$deploy_prefix/System.Diagnostics.TraceSource.pdb: cpifdiff $builddir/System.Diagnostics.TraceSource.pdb
+build $builddir/System.Runtime.CompilerServices.Unsafe.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.CompilerServices.Unsafe.dll
+build $builddir/System.Runtime.CompilerServices.Unsafe.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.CompilerServices.Unsafe.pdb
+build $appdir/$deploy_prefix/System.Runtime.CompilerServices.Unsafe.dll: cpifdiff $builddir\System.Runtime.CompilerServices.Unsafe.dll
+build $appdir/$deploy_prefix/System.Runtime.CompilerServices.Unsafe.pdb: cpifdiff $builddir/System.Runtime.CompilerServices.Unsafe.pdb
+build $builddir/System.Net.Http.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Http.dll
+build $builddir/System.Net.Http.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Http.pdb
+build $appdir/$deploy_prefix/System.Net.Http.dll: cpifdiff $builddir\System.Net.Http.dll
+build $appdir/$deploy_prefix/System.Net.Http.pdb: cpifdiff $builddir/System.Net.Http.pdb
+build $builddir/System.Diagnostics.DiagnosticSource.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.DiagnosticSource.dll
+build $builddir/System.Diagnostics.DiagnosticSource.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.DiagnosticSource.pdb
+build $appdir/$deploy_prefix/System.Diagnostics.DiagnosticSource.dll: cpifdiff $builddir\System.Diagnostics.DiagnosticSource.dll
+build $appdir/$deploy_prefix/System.Diagnostics.DiagnosticSource.pdb: cpifdiff $builddir/System.Diagnostics.DiagnosticSource.pdb
+build $builddir/System.Threading.Thread.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.Thread.dll
+build $builddir/System.Threading.Thread.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.Thread.pdb
+build $appdir/$deploy_prefix/System.Threading.Thread.dll: cpifdiff $builddir\System.Threading.Thread.dll
+build $appdir/$deploy_prefix/System.Threading.Thread.pdb: cpifdiff $builddir/System.Threading.Thread.pdb
+build $builddir/System.Private.Runtime.InteropServices.JavaScript.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.Runtime.InteropServices.JavaScript.dll
+build $builddir/System.Private.Runtime.InteropServices.JavaScript.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.Runtime.InteropServices.JavaScript.pdb
+build $appdir/$deploy_prefix/System.Private.Runtime.InteropServices.JavaScript.dll: cpifdiff $builddir\System.Private.Runtime.InteropServices.JavaScript.dll
+build $appdir/$deploy_prefix/System.Private.Runtime.InteropServices.JavaScript.pdb: cpifdiff $builddir/System.Private.Runtime.InteropServices.JavaScript.pdb
+build $builddir/System.Text.Encoding.Extensions.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Text.Encoding.Extensions.dll
+build $builddir/System.Text.Encoding.Extensions.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Text.Encoding.Extensions.pdb
+build $appdir/$deploy_prefix/System.Text.Encoding.Extensions.dll: cpifdiff $builddir\System.Text.Encoding.Extensions.dll
+build $appdir/$deploy_prefix/System.Text.Encoding.Extensions.pdb: cpifdiff $builddir/System.Text.Encoding.Extensions.pdb
+build $builddir/System.Reflection.Emit.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.Emit.dll
+build $builddir/System.Reflection.Emit.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.Emit.pdb
+build $appdir/$deploy_prefix/System.Reflection.Emit.dll: cpifdiff $builddir\System.Reflection.Emit.dll
+build $appdir/$deploy_prefix/System.Reflection.Emit.pdb: cpifdiff $builddir/System.Reflection.Emit.pdb
+build $builddir/System.Linq.Expressions.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Linq.Expressions.dll
+build $builddir/System.Linq.Expressions.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Linq.Expressions.pdb
+build $appdir/$deploy_prefix/System.Linq.Expressions.dll: cpifdiff $builddir\System.Linq.Expressions.dll
+build $appdir/$deploy_prefix/System.Linq.Expressions.pdb: cpifdiff $builddir/System.Linq.Expressions.pdb
+build $builddir/System.ComponentModel.EventBasedAsync.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.ComponentModel.EventBasedAsync.dll
+build $builddir/System.ComponentModel.EventBasedAsync.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.ComponentModel.EventBasedAsync.pdb
+build $appdir/$deploy_prefix/System.ComponentModel.EventBasedAsync.dll: cpifdiff $builddir\System.ComponentModel.EventBasedAsync.dll
+build $appdir/$deploy_prefix/System.ComponentModel.EventBasedAsync.pdb: cpifdiff $builddir/System.ComponentModel.EventBasedAsync.pdb
+build $builddir/System.Console.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Console.dll
+build $builddir/System.Console.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Console.pdb
+build $appdir/$deploy_prefix/System.Console.dll: cpifdiff $builddir\System.Console.dll
+build $appdir/$deploy_prefix/System.Console.pdb: cpifdiff $builddir/System.Console.pdb
+build $builddir/System.Data.Common.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Data.Common.dll
+build $builddir/System.Data.Common.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Data.Common.pdb
+build $appdir/$deploy_prefix/System.Data.Common.dll: cpifdiff $builddir\System.Data.Common.dll
+build $appdir/$deploy_prefix/System.Data.Common.pdb: cpifdiff $builddir/System.Data.Common.pdb
+build $builddir/System.Xml.ReaderWriter.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Xml.ReaderWriter.dll
+build $builddir/System.Xml.ReaderWriter.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Xml.ReaderWriter.pdb
+build $appdir/$deploy_prefix/System.Xml.ReaderWriter.dll: cpifdiff $builddir\System.Xml.ReaderWriter.dll
+build $appdir/$deploy_prefix/System.Xml.ReaderWriter.pdb: cpifdiff $builddir/System.Xml.ReaderWriter.pdb
+build $builddir/System.Runtime.Numerics.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Numerics.dll
+build $builddir/System.Runtime.Numerics.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Numerics.pdb
+build $appdir/$deploy_prefix/System.Runtime.Numerics.dll: cpifdiff $builddir\System.Runtime.Numerics.dll
+build $appdir/$deploy_prefix/System.Runtime.Numerics.pdb: cpifdiff $builddir/System.Runtime.Numerics.pdb
+build $builddir/System.Xml.XmlSerializer.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Xml.XmlSerializer.dll
+build $builddir/System.Xml.XmlSerializer.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Xml.XmlSerializer.pdb
+build $appdir/$deploy_prefix/System.Xml.XmlSerializer.dll: cpifdiff $builddir\System.Xml.XmlSerializer.dll
+build $appdir/$deploy_prefix/System.Xml.XmlSerializer.pdb: cpifdiff $builddir/System.Xml.XmlSerializer.pdb
+build $builddir/System.Transactions.Local.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Transactions.Local.dll
+build $builddir/System.Transactions.Local.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Transactions.Local.pdb
+build $appdir/$deploy_prefix/System.Transactions.Local.dll: cpifdiff $builddir\System.Transactions.Local.dll
+build $appdir/$deploy_prefix/System.Transactions.Local.pdb: cpifdiff $builddir/System.Transactions.Local.pdb
+build $builddir/System.Threading.ThreadPool.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.ThreadPool.dll
+build $builddir/System.Threading.ThreadPool.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.ThreadPool.pdb
+build $appdir/$deploy_prefix/System.Threading.ThreadPool.dll: cpifdiff $builddir\System.Threading.ThreadPool.dll
+build $appdir/$deploy_prefix/System.Threading.ThreadPool.pdb: cpifdiff $builddir/System.Threading.ThreadPool.pdb
+build $builddir/System.Diagnostics.Contracts.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.Contracts.dll
+build $builddir/System.Diagnostics.Contracts.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.Contracts.pdb
+build $appdir/$deploy_prefix/System.Diagnostics.Contracts.dll: cpifdiff $builddir\System.Diagnostics.Contracts.dll
+build $appdir/$deploy_prefix/System.Diagnostics.Contracts.pdb: cpifdiff $builddir/System.Diagnostics.Contracts.pdb
+build $builddir/System.Diagnostics.TextWriterTraceListener.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.TextWriterTraceListener.dll
+build $builddir/System.Diagnostics.TextWriterTraceListener.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.TextWriterTraceListener.pdb
+build $appdir/$deploy_prefix/System.Diagnostics.TextWriterTraceListener.dll: cpifdiff $builddir\System.Diagnostics.TextWriterTraceListener.dll
+build $appdir/$deploy_prefix/System.Diagnostics.TextWriterTraceListener.pdb: cpifdiff $builddir/System.Diagnostics.TextWriterTraceListener.pdb
+build $builddir/System.Diagnostics.StackTrace.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.StackTrace.dll
+build $builddir/System.Diagnostics.StackTrace.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.StackTrace.pdb
+build $appdir/$deploy_prefix/System.Diagnostics.StackTrace.dll: cpifdiff $builddir\System.Diagnostics.StackTrace.dll
+build $appdir/$deploy_prefix/System.Diagnostics.StackTrace.pdb: cpifdiff $builddir/System.Diagnostics.StackTrace.pdb
+build $builddir/System.Reflection.Metadata.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.Metadata.dll
+build $builddir/System.Reflection.Metadata.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.Metadata.pdb
+build $appdir/$deploy_prefix/System.Reflection.Metadata.dll: cpifdiff $builddir\System.Reflection.Metadata.dll
+build $appdir/$deploy_prefix/System.Reflection.Metadata.pdb: cpifdiff $builddir/System.Reflection.Metadata.pdb
+build $builddir/System.Collections.Immutable.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Collections.Immutable.dll
+build $builddir/System.Collections.Immutable.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Collections.Immutable.pdb
+build $appdir/$deploy_prefix/System.Collections.Immutable.dll: cpifdiff $builddir\System.Collections.Immutable.dll
+build $appdir/$deploy_prefix/System.Collections.Immutable.pdb: cpifdiff $builddir/System.Collections.Immutable.pdb
+build $builddir/System.IO.Compression.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.Compression.dll
+build $builddir/System.IO.Compression.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.Compression.pdb
+build $appdir/$deploy_prefix/System.IO.Compression.dll: cpifdiff $builddir\System.IO.Compression.dll
+build $appdir/$deploy_prefix/System.IO.Compression.pdb: cpifdiff $builddir/System.IO.Compression.pdb
+build $builddir/System.IO.Compression.Brotli.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.Compression.Brotli.dll
+build $builddir/System.IO.Compression.Brotli.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.Compression.Brotli.pdb
+build $appdir/$deploy_prefix/System.IO.Compression.Brotli.dll: cpifdiff $builddir\System.IO.Compression.Brotli.dll
+build $appdir/$deploy_prefix/System.IO.Compression.Brotli.pdb: cpifdiff $builddir/System.IO.Compression.Brotli.pdb
+build $builddir/System.IO.Compression.ZipFile.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.Compression.ZipFile.dll
+build $builddir/System.IO.Compression.ZipFile.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.Compression.ZipFile.pdb
+build $appdir/$deploy_prefix/System.IO.Compression.ZipFile.dll: cpifdiff $builddir\System.IO.Compression.ZipFile.dll
+build $appdir/$deploy_prefix/System.IO.Compression.ZipFile.pdb: cpifdiff $builddir/System.IO.Compression.ZipFile.pdb
+build $builddir/System.IO.FileSystem.DriveInfo.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.FileSystem.DriveInfo.dll
+build $builddir/System.IO.FileSystem.DriveInfo.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.FileSystem.DriveInfo.pdb
+build $appdir/$deploy_prefix/System.IO.FileSystem.DriveInfo.dll: cpifdiff $builddir\System.IO.FileSystem.DriveInfo.dll
+build $appdir/$deploy_prefix/System.IO.FileSystem.DriveInfo.pdb: cpifdiff $builddir/System.IO.FileSystem.DriveInfo.pdb
+build $builddir/System.IO.FileSystem.Watcher.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.FileSystem.Watcher.dll
+build $builddir/System.IO.FileSystem.Watcher.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.FileSystem.Watcher.pdb
+build $appdir/$deploy_prefix/System.IO.FileSystem.Watcher.dll: cpifdiff $builddir\System.IO.FileSystem.Watcher.dll
+build $appdir/$deploy_prefix/System.IO.FileSystem.Watcher.pdb: cpifdiff $builddir/System.IO.FileSystem.Watcher.pdb
+build $builddir/System.IO.IsolatedStorage.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.IsolatedStorage.dll
+build $builddir/System.IO.IsolatedStorage.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.IO.IsolatedStorage.pdb
+build $appdir/$deploy_prefix/System.IO.IsolatedStorage.dll: cpifdiff $builddir\System.IO.IsolatedStorage.dll
+build $appdir/$deploy_prefix/System.IO.IsolatedStorage.pdb: cpifdiff $builddir/System.IO.IsolatedStorage.pdb
+build $builddir/System.Linq.Queryable.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Linq.Queryable.dll
+build $builddir/System.Linq.Queryable.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Linq.Queryable.pdb
+build $appdir/$deploy_prefix/System.Linq.Queryable.dll: cpifdiff $builddir\System.Linq.Queryable.dll
+build $appdir/$deploy_prefix/System.Linq.Queryable.pdb: cpifdiff $builddir/System.Linq.Queryable.pdb
+build $builddir/System.Linq.Parallel.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Linq.Parallel.dll
+build $builddir/System.Linq.Parallel.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Linq.Parallel.pdb
+build $appdir/$deploy_prefix/System.Linq.Parallel.dll: cpifdiff $builddir\System.Linq.Parallel.dll
+build $appdir/$deploy_prefix/System.Linq.Parallel.pdb: cpifdiff $builddir/System.Linq.Parallel.pdb
+build $builddir/System.Net.Requests.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Requests.dll
+build $builddir/System.Net.Requests.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Requests.pdb
+build $appdir/$deploy_prefix/System.Net.Requests.dll: cpifdiff $builddir\System.Net.Requests.dll
+build $appdir/$deploy_prefix/System.Net.Requests.pdb: cpifdiff $builddir/System.Net.Requests.pdb
+build $builddir/System.Net.WebHeaderCollection.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.WebHeaderCollection.dll
+build $builddir/System.Net.WebHeaderCollection.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.WebHeaderCollection.pdb
+build $appdir/$deploy_prefix/System.Net.WebHeaderCollection.dll: cpifdiff $builddir\System.Net.WebHeaderCollection.dll
+build $appdir/$deploy_prefix/System.Net.WebHeaderCollection.pdb: cpifdiff $builddir/System.Net.WebHeaderCollection.pdb
+build $builddir/System.Net.ServicePoint.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.ServicePoint.dll
+build $builddir/System.Net.ServicePoint.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.ServicePoint.pdb
+build $appdir/$deploy_prefix/System.Net.ServicePoint.dll: cpifdiff $builddir\System.Net.ServicePoint.dll
+build $appdir/$deploy_prefix/System.Net.ServicePoint.pdb: cpifdiff $builddir/System.Net.ServicePoint.pdb
+build $builddir/System.Net.HttpListener.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.HttpListener.dll
+build $builddir/System.Net.HttpListener.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.HttpListener.pdb
+build $appdir/$deploy_prefix/System.Net.HttpListener.dll: cpifdiff $builddir\System.Net.HttpListener.dll
+build $appdir/$deploy_prefix/System.Net.HttpListener.pdb: cpifdiff $builddir/System.Net.HttpListener.pdb
+build $builddir/System.Security.Claims.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Claims.dll
+build $builddir/System.Security.Claims.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Claims.pdb
+build $appdir/$deploy_prefix/System.Security.Claims.dll: cpifdiff $builddir\System.Security.Claims.dll
+build $appdir/$deploy_prefix/System.Security.Claims.pdb: cpifdiff $builddir/System.Security.Claims.pdb
+build $builddir/System.Net.WebSockets.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.WebSockets.dll
+build $builddir/System.Net.WebSockets.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.WebSockets.pdb
+build $appdir/$deploy_prefix/System.Net.WebSockets.dll: cpifdiff $builddir\System.Net.WebSockets.dll
+build $appdir/$deploy_prefix/System.Net.WebSockets.pdb: cpifdiff $builddir/System.Net.WebSockets.pdb
+build $builddir/System.Net.NameResolution.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.NameResolution.dll
+build $builddir/System.Net.NameResolution.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.NameResolution.pdb
+build $appdir/$deploy_prefix/System.Net.NameResolution.dll: cpifdiff $builddir\System.Net.NameResolution.dll
+build $appdir/$deploy_prefix/System.Net.NameResolution.pdb: cpifdiff $builddir/System.Net.NameResolution.pdb
+build $builddir/System.Net.WebClient.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.WebClient.dll
+build $builddir/System.Net.WebClient.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.WebClient.pdb
+build $appdir/$deploy_prefix/System.Net.WebClient.dll: cpifdiff $builddir\System.Net.WebClient.dll
+build $appdir/$deploy_prefix/System.Net.WebClient.pdb: cpifdiff $builddir/System.Net.WebClient.pdb
+build $builddir/System.Net.WebProxy.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.WebProxy.dll
+build $builddir/System.Net.WebProxy.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.WebProxy.pdb
+build $appdir/$deploy_prefix/System.Net.WebProxy.dll: cpifdiff $builddir\System.Net.WebProxy.dll
+build $appdir/$deploy_prefix/System.Net.WebProxy.pdb: cpifdiff $builddir/System.Net.WebProxy.pdb
+build $builddir/System.Net.Mail.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Mail.dll
+build $builddir/System.Net.Mail.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Mail.pdb
+build $appdir/$deploy_prefix/System.Net.Mail.dll: cpifdiff $builddir\System.Net.Mail.dll
+build $appdir/$deploy_prefix/System.Net.Mail.pdb: cpifdiff $builddir/System.Net.Mail.pdb
+build $builddir/System.Net.NetworkInformation.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.NetworkInformation.dll
+build $builddir/System.Net.NetworkInformation.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.NetworkInformation.pdb
+build $appdir/$deploy_prefix/System.Net.NetworkInformation.dll: cpifdiff $builddir\System.Net.NetworkInformation.dll
+build $appdir/$deploy_prefix/System.Net.NetworkInformation.pdb: cpifdiff $builddir/System.Net.NetworkInformation.pdb
+build $builddir/System.Net.Ping.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Ping.dll
+build $builddir/System.Net.Ping.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Ping.pdb
+build $appdir/$deploy_prefix/System.Net.Ping.dll: cpifdiff $builddir\System.Net.Ping.dll
+build $appdir/$deploy_prefix/System.Net.Ping.pdb: cpifdiff $builddir/System.Net.Ping.pdb
+build $builddir/System.Net.Sockets.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Sockets.dll
+build $builddir/System.Net.Sockets.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.Sockets.pdb
+build $appdir/$deploy_prefix/System.Net.Sockets.dll: cpifdiff $builddir\System.Net.Sockets.dll
+build $appdir/$deploy_prefix/System.Net.Sockets.pdb: cpifdiff $builddir/System.Net.Sockets.pdb
+build $builddir/System.Net.WebSockets.Client.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.WebSockets.Client.dll
+build $builddir/System.Net.WebSockets.Client.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Net.WebSockets.Client.pdb
+build $appdir/$deploy_prefix/System.Net.WebSockets.Client.dll: cpifdiff $builddir\System.Net.WebSockets.Client.dll
+build $appdir/$deploy_prefix/System.Net.WebSockets.Client.pdb: cpifdiff $builddir/System.Net.WebSockets.Client.pdb
+build $builddir/System.Threading.Channels.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.Channels.dll
+build $builddir/System.Threading.Channels.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.Channels.pdb
+build $appdir/$deploy_prefix/System.Threading.Channels.dll: cpifdiff $builddir\System.Threading.Channels.dll
+build $appdir/$deploy_prefix/System.Threading.Channels.pdb: cpifdiff $builddir/System.Threading.Channels.pdb
+build $builddir/System.Reflection.DispatchProxy.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.DispatchProxy.dll
+build $builddir/System.Reflection.DispatchProxy.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Reflection.DispatchProxy.pdb
+build $appdir/$deploy_prefix/System.Reflection.DispatchProxy.dll: cpifdiff $builddir\System.Reflection.DispatchProxy.dll
+build $appdir/$deploy_prefix/System.Reflection.DispatchProxy.pdb: cpifdiff $builddir/System.Reflection.DispatchProxy.pdb
+build $builddir/System.Runtime.CompilerServices.VisualC.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.CompilerServices.VisualC.dll
+build $builddir/System.Runtime.CompilerServices.VisualC.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.CompilerServices.VisualC.pdb
+build $appdir/$deploy_prefix/System.Runtime.CompilerServices.VisualC.dll: cpifdiff $builddir\System.Runtime.CompilerServices.VisualC.dll
+build $appdir/$deploy_prefix/System.Runtime.CompilerServices.VisualC.pdb: cpifdiff $builddir/System.Runtime.CompilerServices.VisualC.pdb
+build $builddir/System.Runtime.InteropServices.RuntimeInformation.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.InteropServices.RuntimeInformation.dll
+build $builddir/System.Runtime.InteropServices.RuntimeInformation.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.InteropServices.RuntimeInformation.pdb
+build $appdir/$deploy_prefix/System.Runtime.InteropServices.RuntimeInformation.dll: cpifdiff $builddir\System.Runtime.InteropServices.RuntimeInformation.dll
+build $appdir/$deploy_prefix/System.Runtime.InteropServices.RuntimeInformation.pdb: cpifdiff $builddir/System.Runtime.InteropServices.RuntimeInformation.pdb
+build $builddir/System.Runtime.Serialization.Primitives.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Serialization.Primitives.dll
+build $builddir/System.Runtime.Serialization.Primitives.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Serialization.Primitives.pdb
+build $appdir/$deploy_prefix/System.Runtime.Serialization.Primitives.dll: cpifdiff $builddir\System.Runtime.Serialization.Primitives.dll
+build $appdir/$deploy_prefix/System.Runtime.Serialization.Primitives.pdb: cpifdiff $builddir/System.Runtime.Serialization.Primitives.pdb
+build $builddir/System.Runtime.Serialization.Xml.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Serialization.Xml.dll
+build $builddir/System.Runtime.Serialization.Xml.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Serialization.Xml.pdb
+build $appdir/$deploy_prefix/System.Runtime.Serialization.Xml.dll: cpifdiff $builddir\System.Runtime.Serialization.Xml.dll
+build $appdir/$deploy_prefix/System.Runtime.Serialization.Xml.pdb: cpifdiff $builddir/System.Runtime.Serialization.Xml.pdb
+build $builddir/System.Private.DataContractSerialization.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.DataContractSerialization.dll
+build $builddir/System.Private.DataContractSerialization.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Private.DataContractSerialization.pdb
+build $appdir/$deploy_prefix/System.Private.DataContractSerialization.dll: cpifdiff $builddir\System.Private.DataContractSerialization.dll
+build $appdir/$deploy_prefix/System.Private.DataContractSerialization.pdb: cpifdiff $builddir/System.Private.DataContractSerialization.pdb
+build $builddir/System.Runtime.Serialization.Json.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Serialization.Json.dll
+build $builddir/System.Runtime.Serialization.Json.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Serialization.Json.pdb
+build $appdir/$deploy_prefix/System.Runtime.Serialization.Json.dll: cpifdiff $builddir\System.Runtime.Serialization.Json.dll
+build $appdir/$deploy_prefix/System.Runtime.Serialization.Json.pdb: cpifdiff $builddir/System.Runtime.Serialization.Json.pdb
+build $builddir/System.Security.Cryptography.Csp.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Cryptography.Csp.dll
+build $builddir/System.Security.Cryptography.Csp.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Security.Cryptography.Csp.pdb
+build $appdir/$deploy_prefix/System.Security.Cryptography.Csp.dll: cpifdiff $builddir\System.Security.Cryptography.Csp.dll
+build $appdir/$deploy_prefix/System.Security.Cryptography.Csp.pdb: cpifdiff $builddir/System.Security.Cryptography.Csp.pdb
+build $builddir/System.Threading.Overlapped.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.Overlapped.dll
+build $builddir/System.Threading.Overlapped.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.Overlapped.pdb
+build $appdir/$deploy_prefix/System.Threading.Overlapped.dll: cpifdiff $builddir\System.Threading.Overlapped.dll
+build $appdir/$deploy_prefix/System.Threading.Overlapped.pdb: cpifdiff $builddir/System.Threading.Overlapped.pdb
+build $builddir/System.Threading.Tasks.Parallel.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.Tasks.Parallel.dll
+build $builddir/System.Threading.Tasks.Parallel.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.Tasks.Parallel.pdb
+build $appdir/$deploy_prefix/System.Threading.Tasks.Parallel.dll: cpifdiff $builddir\System.Threading.Tasks.Parallel.dll
+build $appdir/$deploy_prefix/System.Threading.Tasks.Parallel.pdb: cpifdiff $builddir/System.Threading.Tasks.Parallel.pdb
+build $builddir/System.Web.HttpUtility.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Web.HttpUtility.dll
+build $builddir/System.Web.HttpUtility.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Web.HttpUtility.pdb
+build $appdir/$deploy_prefix/System.Web.HttpUtility.dll: cpifdiff $builddir\System.Web.HttpUtility.dll
+build $appdir/$deploy_prefix/System.Web.HttpUtility.pdb: cpifdiff $builddir/System.Web.HttpUtility.pdb
+build $builddir/System.Xml.XPath.XDocument.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Xml.XPath.XDocument.dll
+build $builddir/System.Xml.XPath.XDocument.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Xml.XPath.XDocument.pdb
+build $appdir/$deploy_prefix/System.Xml.XPath.XDocument.dll: cpifdiff $builddir\System.Xml.XPath.XDocument.dll
+build $appdir/$deploy_prefix/System.Xml.XPath.XDocument.pdb: cpifdiff $builddir/System.Xml.XPath.XDocument.pdb
+build $builddir/System.Xml.XPath.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Xml.XPath.dll
+build $builddir/System.Xml.XPath.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Xml.XPath.pdb
+build $appdir/$deploy_prefix/System.Xml.XPath.dll: cpifdiff $builddir\System.Xml.XPath.dll
+build $appdir/$deploy_prefix/System.Xml.XPath.pdb: cpifdiff $builddir/System.Xml.XPath.pdb
+build $builddir/Uno.Wasm.MetadataUpdater.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.wasm.bootstrap\3.3.1\tools\support\Uno.Wasm.MetadataUpdater.dll
+build $builddir/Uno.Wasm.MetadataUpdater.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.wasm.bootstrap\3.3.1\tools\support\Uno.Wasm.MetadataUpdater.pdb
+build $appdir/$deploy_prefix/Uno.Wasm.MetadataUpdater.dll: cpifdiff $builddir\Uno.Wasm.MetadataUpdater.dll
+build $appdir/$deploy_prefix/Uno.Wasm.MetadataUpdater.pdb: cpifdiff $builddir/Uno.Wasm.MetadataUpdater.pdb
+build $builddir/UnoSample.Wasm.dll: cpifdiff C$:\src\UnoSample\UnoSample.Wasm\obj\Debug\net5.0\UnoSample.Wasm.dll
+build $builddir/UnoSample.Wasm.pdb: cpifdiff C$:\src\UnoSample\UnoSample.Wasm\obj\Debug\net5.0\UnoSample.Wasm.pdb
+build $appdir/$deploy_prefix/UnoSample.Wasm.dll: cpifdiff $builddir\UnoSample.Wasm.dll
+build $appdir/$deploy_prefix/UnoSample.Wasm.pdb: cpifdiff $builddir/UnoSample.Wasm.pdb
+build $builddir/Uno.UI.RemoteControl.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui.remotecontrol\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.RemoteControl.dll
+build $builddir/Uno.UI.RemoteControl.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui.remotecontrol\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.RemoteControl.pdb
+build $appdir/$deploy_prefix/Uno.UI.RemoteControl.dll: cpifdiff $builddir\Uno.UI.RemoteControl.dll
+build $appdir/$deploy_prefix/Uno.UI.RemoteControl.pdb: cpifdiff $builddir/Uno.UI.RemoteControl.pdb
+build $builddir/Uno.UI.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.dll
+build $builddir/Uno.UI.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.pdb
+build $appdir/$deploy_prefix/Uno.UI.dll: cpifdiff $builddir\Uno.UI.dll
+build $appdir/$deploy_prefix/Uno.UI.pdb: cpifdiff $builddir/Uno.UI.pdb
+build $builddir/Uno.Foundation.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.Foundation.dll
+build $builddir/Uno.Foundation.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.Foundation.pdb
+build $appdir/$deploy_prefix/Uno.Foundation.dll: cpifdiff $builddir\Uno.Foundation.dll
+build $appdir/$deploy_prefix/Uno.Foundation.pdb: cpifdiff $builddir/Uno.Foundation.pdb
+build $builddir/Uno.Foundation.Logging.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.foundation.logging\4.10.22\lib\netstandard2.0\Uno.Foundation.Logging.dll
+build $builddir/Uno.Foundation.Logging.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.foundation.logging\4.10.22\lib\netstandard2.0\Uno.Foundation.Logging.pdb
+build $appdir/$deploy_prefix/Uno.Foundation.Logging.dll: cpifdiff $builddir\Uno.Foundation.Logging.dll
+build $appdir/$deploy_prefix/Uno.Foundation.Logging.pdb: cpifdiff $builddir/Uno.Foundation.Logging.pdb
+build $builddir/Uno.Foundation.Runtime.WebAssembly.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.foundation.runtime.webassembly\4.10.22\lib\netstandard2.0\Uno.Foundation.Runtime.WebAssembly.dll
+build $builddir/Uno.Foundation.Runtime.WebAssembly.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.foundation.runtime.webassembly\4.10.22\lib\netstandard2.0\Uno.Foundation.Runtime.WebAssembly.pdb
+build $appdir/$deploy_prefix/Uno.Foundation.Runtime.WebAssembly.dll: cpifdiff $builddir\Uno.Foundation.Runtime.WebAssembly.dll
+build $appdir/$deploy_prefix/Uno.Foundation.Runtime.WebAssembly.pdb: cpifdiff $builddir/Uno.Foundation.Runtime.WebAssembly.pdb
+build $builddir/Uno.Diagnostics.Eventing.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.diagnostics.eventing\2.0.1\lib\net5.0\Uno.Diagnostics.Eventing.dll
+build $builddir/Uno.Diagnostics.Eventing.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.diagnostics.eventing\2.0.1\lib\net5.0\Uno.Diagnostics.Eventing.pdb
+build $appdir/$deploy_prefix/Uno.Diagnostics.Eventing.dll: cpifdiff $builddir\Uno.Diagnostics.Eventing.dll
+build $appdir/$deploy_prefix/Uno.Diagnostics.Eventing.pdb: cpifdiff $builddir/Uno.Diagnostics.Eventing.pdb
+build $builddir/Uno.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.dll
+build $builddir/Uno.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.pdb
+build $appdir/$deploy_prefix/Uno.dll: cpifdiff $builddir\Uno.dll
+build $appdir/$deploy_prefix/Uno.pdb: cpifdiff $builddir/Uno.pdb
+build $builddir/Uno.UI.Dispatching.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.Dispatching.dll
+build $builddir/Uno.UI.Dispatching.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.Dispatching.pdb
+build $appdir/$deploy_prefix/Uno.UI.Dispatching.dll: cpifdiff $builddir\Uno.UI.Dispatching.dll
+build $appdir/$deploy_prefix/Uno.UI.Dispatching.pdb: cpifdiff $builddir/Uno.UI.Dispatching.pdb
+build $builddir/System.Text.Json.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Text.Json.dll
+build $builddir/System.Text.Json.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Text.Json.pdb
+build $appdir/$deploy_prefix/System.Text.Json.dll: cpifdiff $builddir\System.Text.Json.dll
+build $appdir/$deploy_prefix/System.Text.Json.pdb: cpifdiff $builddir/System.Text.Json.pdb
+build $builddir/System.Text.Encodings.Web.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Text.Encodings.Web.dll
+build $builddir/System.Text.Encodings.Web.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Text.Encodings.Web.pdb
+build $appdir/$deploy_prefix/System.Text.Encodings.Web.dll: cpifdiff $builddir\System.Text.Encodings.Web.dll
+build $appdir/$deploy_prefix/System.Text.Encodings.Web.pdb: cpifdiff $builddir/System.Text.Encodings.Web.pdb
+build $builddir/System.Runtime.Intrinsics.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Intrinsics.dll
+build $builddir/System.Runtime.Intrinsics.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Intrinsics.pdb
+build $appdir/$deploy_prefix/System.Runtime.Intrinsics.dll: cpifdiff $builddir\System.Runtime.Intrinsics.dll
+build $appdir/$deploy_prefix/System.Runtime.Intrinsics.pdb: cpifdiff $builddir/System.Runtime.Intrinsics.pdb
+build $builddir/Uno.UI.Composition.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.Composition.dll
+build $builddir/Uno.UI.Composition.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.Composition.pdb
+build $appdir/$deploy_prefix/Uno.UI.Composition.dll: cpifdiff $builddir\Uno.UI.Composition.dll
+build $appdir/$deploy_prefix/Uno.UI.Composition.pdb: cpifdiff $builddir/Uno.UI.Composition.pdb
+build $builddir/Uno.Xaml.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.Xaml.dll
+build $builddir/Uno.Xaml.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.Xaml.pdb
+build $appdir/$deploy_prefix/Uno.Xaml.dll: cpifdiff $builddir\Uno.Xaml.dll
+build $appdir/$deploy_prefix/Uno.Xaml.pdb: cpifdiff $builddir/Uno.Xaml.pdb
+build $builddir/System.Buffers.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Buffers.dll
+build $builddir/System.Buffers.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Buffers.pdb
+build $appdir/$deploy_prefix/System.Buffers.dll: cpifdiff $builddir\System.Buffers.dll
+build $appdir/$deploy_prefix/System.Buffers.pdb: cpifdiff $builddir/System.Buffers.pdb
+build $builddir/Uno.UI.RemoteControl.Messaging.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui.remotecontrol\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.RemoteControl.Messaging.dll
+build $builddir/Uno.UI.RemoteControl.Messaging.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui.remotecontrol\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.RemoteControl.Messaging.pdb
+build $appdir/$deploy_prefix/Uno.UI.RemoteControl.Messaging.dll: cpifdiff $builddir\Uno.UI.RemoteControl.Messaging.dll
+build $appdir/$deploy_prefix/Uno.UI.RemoteControl.Messaging.pdb: cpifdiff $builddir/Uno.UI.RemoteControl.Messaging.pdb
+build $builddir/Newtonsoft.Json.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\newtonsoft.json\13.0.2\lib\netstandard2.0\Newtonsoft.Json.dll
+build $appdir/$deploy_prefix/Newtonsoft.Json.dll: cpifdiff $builddir\Newtonsoft.Json.dll
+build $builddir/Microsoft.IO.RecyclableMemoryStream.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\microsoft.io.recyclablememorystream\2.3.2\lib\net5.0\Microsoft.IO.RecyclableMemoryStream.dll
+build $appdir/$deploy_prefix/Microsoft.IO.RecyclableMemoryStream.dll: cpifdiff $builddir\Microsoft.IO.RecyclableMemoryStream.dll
+build $builddir/Uno.UI.Runtime.WebAssembly.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui.runtime.webassembly\4.10.22\lib\netstandard2.0\Uno.UI.Runtime.WebAssembly.dll
+build $builddir/Uno.UI.Runtime.WebAssembly.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui.runtime.webassembly\4.10.22\lib\netstandard2.0\Uno.UI.Runtime.WebAssembly.pdb
+build $appdir/$deploy_prefix/Uno.UI.Runtime.WebAssembly.dll: cpifdiff $builddir\Uno.UI.Runtime.WebAssembly.dll
+build $appdir/$deploy_prefix/Uno.UI.Runtime.WebAssembly.pdb: cpifdiff $builddir/Uno.UI.Runtime.WebAssembly.pdb
+build $builddir/Microsoft.Extensions.Logging.Abstractions.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\microsoft.extensions.logging.abstractions\5.0.0\lib\netstandard2.0\Microsoft.Extensions.Logging.Abstractions.dll
+build $appdir/$deploy_prefix/Microsoft.Extensions.Logging.Abstractions.dll: cpifdiff $builddir\Microsoft.Extensions.Logging.Abstractions.dll
+build $builddir/Microsoft.Extensions.Logging.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\microsoft.extensions.logging\5.0.0\lib\netstandard2.1\Microsoft.Extensions.Logging.dll
+build $appdir/$deploy_prefix/Microsoft.Extensions.Logging.dll: cpifdiff $builddir\Microsoft.Extensions.Logging.dll
+build $builddir/Microsoft.Extensions.DependencyInjection.Abstractions.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\microsoft.extensions.dependencyinjection.abstractions\5.0.0\lib\netstandard2.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+build $appdir/$deploy_prefix/Microsoft.Extensions.DependencyInjection.Abstractions.dll: cpifdiff $builddir\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+build $builddir/Microsoft.Extensions.Options.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\microsoft.extensions.options\5.0.0\lib\net5.0\Microsoft.Extensions.Options.dll
+build $appdir/$deploy_prefix/Microsoft.Extensions.Options.dll: cpifdiff $builddir\Microsoft.Extensions.Options.dll
+build $builddir/Microsoft.Extensions.Primitives.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\microsoft.extensions.primitives\5.0.0\lib\netcoreapp3.0\Microsoft.Extensions.Primitives.dll
+build $appdir/$deploy_prefix/Microsoft.Extensions.Primitives.dll: cpifdiff $builddir\Microsoft.Extensions.Primitives.dll
+build $builddir/System.Resources.ResourceManager.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Resources.ResourceManager.dll
+build $builddir/System.Resources.ResourceManager.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Resources.ResourceManager.pdb
+build $appdir/$deploy_prefix/System.Resources.ResourceManager.dll: cpifdiff $builddir\System.Resources.ResourceManager.dll
+build $appdir/$deploy_prefix/System.Resources.ResourceManager.pdb: cpifdiff $builddir/System.Resources.ResourceManager.pdb
+build $builddir/System.Runtime.Extensions.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Extensions.dll
+build $builddir/System.Runtime.Extensions.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Runtime.Extensions.pdb
+build $appdir/$deploy_prefix/System.Runtime.Extensions.dll: cpifdiff $builddir\System.Runtime.Extensions.dll
+build $appdir/$deploy_prefix/System.Runtime.Extensions.pdb: cpifdiff $builddir/System.Runtime.Extensions.pdb
+build $builddir/System.Threading.Tasks.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.Tasks.dll
+build $builddir/System.Threading.Tasks.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Threading.Tasks.pdb
+build $appdir/$deploy_prefix/System.Threading.Tasks.dll: cpifdiff $builddir\System.Threading.Tasks.dll
+build $appdir/$deploy_prefix/System.Threading.Tasks.pdb: cpifdiff $builddir/System.Threading.Tasks.pdb
+build $builddir/Microsoft.Extensions.DependencyInjection.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\microsoft.extensions.dependencyinjection\5.0.0\lib\net5.0\Microsoft.Extensions.DependencyInjection.dll
+build $appdir/$deploy_prefix/Microsoft.Extensions.DependencyInjection.dll: cpifdiff $builddir\Microsoft.Extensions.DependencyInjection.dll
+build $builddir/SkiaSharp.Views.UWP.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\skiasharp.views.uno\2.88.6\uno-runtime\webassembly\SkiaSharp.Views.UWP.dll
+build $builddir/SkiaSharp.Views.UWP.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\skiasharp.views.uno\2.88.6\uno-runtime\webassembly\SkiaSharp.Views.UWP.pdb
+build $appdir/$deploy_prefix/SkiaSharp.Views.UWP.dll: cpifdiff $builddir\SkiaSharp.Views.UWP.dll
+build $appdir/$deploy_prefix/SkiaSharp.Views.UWP.pdb: cpifdiff $builddir/SkiaSharp.Views.UWP.pdb
+build $builddir/SkiaSharp.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\skiasharp\2.88.6\lib\netcoreapp3.1\SkiaSharp.dll
+build $builddir/SkiaSharp.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\skiasharp\2.88.6\lib\netcoreapp3.1\SkiaSharp.pdb
+build $appdir/$deploy_prefix/SkiaSharp.dll: cpifdiff $builddir\SkiaSharp.dll
+build $appdir/$deploy_prefix/SkiaSharp.pdb: cpifdiff $builddir/SkiaSharp.pdb
+build $builddir/System.Diagnostics.Debug.dll: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.Debug.dll
+build $builddir/System.Diagnostics.Debug.pdb: cpifdiff C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\lib\net6.0\System.Diagnostics.Debug.pdb
+build $appdir/$deploy_prefix/System.Diagnostics.Debug.dll: cpifdiff $builddir\System.Diagnostics.Debug.dll
+build $appdir/$deploy_prefix/System.Diagnostics.Debug.pdb: cpifdiff $builddir/System.Diagnostics.Debug.pdb
+build $builddir/Uno.UI.Toolkit.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.Toolkit.dll
+build $builddir/Uno.UI.Toolkit.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.Toolkit.pdb
+build $appdir/$deploy_prefix/Uno.UI.Toolkit.dll: cpifdiff $builddir\Uno.UI.Toolkit.dll
+build $appdir/$deploy_prefix/Uno.UI.Toolkit.pdb: cpifdiff $builddir/Uno.UI.Toolkit.pdb
+build $builddir/Uno.Core.Extensions.Logging.Singleton.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.core.extensions.logging.singleton\4.0.0-dev.7\lib\net5.0\Uno.Core.Extensions.Logging.Singleton.dll
+build $builddir/Uno.Core.Extensions.Logging.Singleton.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.core.extensions.logging.singleton\4.0.0-dev.7\lib\net5.0\Uno.Core.Extensions.Logging.Singleton.pdb
+build $appdir/$deploy_prefix/Uno.Core.Extensions.Logging.Singleton.dll: cpifdiff $builddir\Uno.Core.Extensions.Logging.Singleton.dll
+build $appdir/$deploy_prefix/Uno.Core.Extensions.Logging.Singleton.pdb: cpifdiff $builddir/Uno.Core.Extensions.Logging.Singleton.pdb
+build $builddir/CommonServiceLocator.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\commonservicelocator\2.0.5\lib\netcoreapp3.0\CommonServiceLocator.dll
+build $appdir/$deploy_prefix/CommonServiceLocator.dll: cpifdiff $builddir\CommonServiceLocator.dll
+build $builddir/Uno.UI.Adapter.Microsoft.Extensions.Logging.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui.adapter.microsoft.extensions.logging\4.10.22\lib\netstandard2.0\Uno.UI.Adapter.Microsoft.Extensions.Logging.dll
+build $builddir/Uno.UI.Adapter.Microsoft.Extensions.Logging.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui.adapter.microsoft.extensions.logging\4.10.22\lib\netstandard2.0\Uno.UI.Adapter.Microsoft.Extensions.Logging.pdb
+build $appdir/$deploy_prefix/Uno.UI.Adapter.Microsoft.Extensions.Logging.dll: cpifdiff $builddir\Uno.UI.Adapter.Microsoft.Extensions.Logging.dll
+build $appdir/$deploy_prefix/Uno.UI.Adapter.Microsoft.Extensions.Logging.pdb: cpifdiff $builddir/Uno.UI.Adapter.Microsoft.Extensions.Logging.pdb
+build $builddir/Uno.UI.FluentTheme.v2.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.FluentTheme.v2.dll
+build $builddir/Uno.UI.FluentTheme.v2.pdb: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.ui\4.10.22\uno-runtime\netstandard2.0\webassembly\Uno.UI.FluentTheme.v2.pdb
+build $appdir/$deploy_prefix/Uno.UI.FluentTheme.v2.dll: cpifdiff $builddir\Uno.UI.FluentTheme.v2.dll
+build $appdir/$deploy_prefix/Uno.UI.FluentTheme.v2.pdb: cpifdiff $builddir/Uno.UI.FluentTheme.v2.pdb
+build $builddir/Uno.Extensions.Logging.WebAssembly.Console.dll: cpifdiff C$:\Users\SaadSharif\.nuget\packages\uno.extensions.logging.webassembly.console\1.4.0\lib\net5.0\Uno.Extensions.Logging.WebAssembly.Console.dll
+build $appdir/$deploy_prefix/Uno.Extensions.Logging.WebAssembly.Console.dll: cpifdiff $builddir\Uno.Extensions.Logging.WebAssembly.Console.dll
+build $builddir/pinvoke-table.h: cpifdiff $builddir/pinvoke-table.h.tmp
+build $builddir/pinvoke-table.h.tmp: gen-pinvoke-table $builddir\Uno.Wasm.TimezoneData.dll $builddir\netstandard.dll $builddir\System.Runtime.dll $builddir\System.Private.CoreLib.dll $builddir\System.Private.Uri.dll $builddir\System.IO.MemoryMappedFiles.dll $builddir\System.Runtime.InteropServices.dll $builddir\System.IO.Pipes.dll $builddir\System.Diagnostics.Process.dll $builddir\System.ComponentModel.Primitives.dll $builddir\System.Threading.dll $builddir\System.ComponentModel.dll $builddir\System.Collections.NonGeneric.dll $builddir\System.ObjectModel.dll $builddir\System.Collections.dll $builddir\System.Diagnostics.FileVersionInfo.dll $builddir\System.Collections.Specialized.dll $builddir\System.Security.Cryptography.X509Certificates.dll $builddir\System.Security.Cryptography.Algorithms.dll $builddir\System.Memory.dll $builddir\System.Security.Cryptography.Primitives.dll $builddir\System.Security.Cryptography.Encoding.dll $builddir\System.Net.Primitives.dll $builddir\System.Diagnostics.Tracing.dll $builddir\Microsoft.Win32.Primitives.dll $builddir\System.Collections.Concurrent.dll $builddir\System.ComponentModel.TypeConverter.dll $builddir\System.Runtime.Loader.dll $builddir\System.Net.Security.dll $builddir\System.Drawing.Primitives.dll $builddir\System.Numerics.Vectors.dll $builddir\System.Linq.dll $builddir\System.Text.RegularExpressions.dll $builddir\System.Reflection.Emit.ILGeneration.dll $builddir\System.Reflection.Emit.Lightweight.dll $builddir\System.Reflection.Primitives.dll $builddir\System.Runtime.Serialization.Formatters.dll $builddir\System.Resources.Writer.dll $builddir\System.Xml.XDocument.dll $builddir\System.Private.Xml.Linq.dll $builddir\System.Private.Xml.dll $builddir\System.Diagnostics.TraceSource.dll $builddir\System.Runtime.CompilerServices.Unsafe.dll $builddir\System.Net.Http.dll $builddir\System.Diagnostics.DiagnosticSource.dll $builddir\System.Threading.Thread.dll $builddir\System.Private.Runtime.InteropServices.JavaScript.dll $builddir\System.Text.Encoding.Extensions.dll $builddir\System.Reflection.Emit.dll $builddir\System.Linq.Expressions.dll $builddir\System.ComponentModel.EventBasedAsync.dll $builddir\System.Console.dll $builddir\System.Data.Common.dll $builddir\System.Xml.ReaderWriter.dll $builddir\System.Runtime.Numerics.dll $builddir\System.Xml.XmlSerializer.dll $builddir\System.Transactions.Local.dll $builddir\System.Threading.ThreadPool.dll $builddir\System.Diagnostics.Contracts.dll $builddir\System.Diagnostics.TextWriterTraceListener.dll $builddir\System.Diagnostics.StackTrace.dll $builddir\System.Reflection.Metadata.dll $builddir\System.Collections.Immutable.dll $builddir\System.IO.Compression.dll $builddir\System.IO.Compression.Brotli.dll $builddir\System.IO.Compression.ZipFile.dll $builddir\System.IO.FileSystem.DriveInfo.dll $builddir\System.IO.FileSystem.Watcher.dll $builddir\System.IO.IsolatedStorage.dll $builddir\System.Linq.Queryable.dll $builddir\System.Linq.Parallel.dll $builddir\System.Net.Requests.dll $builddir\System.Net.WebHeaderCollection.dll $builddir\System.Net.ServicePoint.dll $builddir\System.Net.HttpListener.dll $builddir\System.Security.Claims.dll $builddir\System.Net.WebSockets.dll $builddir\System.Net.NameResolution.dll $builddir\System.Net.WebClient.dll $builddir\System.Net.WebProxy.dll $builddir\System.Net.Mail.dll $builddir\System.Net.NetworkInformation.dll $builddir\System.Net.Ping.dll $builddir\System.Net.Sockets.dll $builddir\System.Net.WebSockets.Client.dll $builddir\System.Threading.Channels.dll $builddir\System.Reflection.DispatchProxy.dll $builddir\System.Runtime.CompilerServices.VisualC.dll $builddir\System.Runtime.InteropServices.RuntimeInformation.dll $builddir\System.Runtime.Serialization.Primitives.dll $builddir\System.Runtime.Serialization.Xml.dll $builddir\System.Private.DataContractSerialization.dll $builddir\System.Runtime.Serialization.Json.dll $builddir\System.Security.Cryptography.Csp.dll $builddir\System.Threading.Overlapped.dll $builddir\System.Threading.Tasks.Parallel.dll $builddir\System.Web.HttpUtility.dll $builddir\System.Xml.XPath.XDocument.dll $builddir\System.Xml.XPath.dll $builddir\Uno.Wasm.MetadataUpdater.dll $builddir\UnoSample.Wasm.dll $builddir\Uno.UI.RemoteControl.dll $builddir\Uno.UI.dll $builddir\Uno.Foundation.dll $builddir\Uno.Foundation.Logging.dll $builddir\Uno.Foundation.Runtime.WebAssembly.dll $builddir\Uno.Diagnostics.Eventing.dll $builddir\Uno.dll $builddir\Uno.UI.Dispatching.dll $builddir\System.Text.Json.dll $builddir\System.Text.Encodings.Web.dll $builddir\System.Runtime.Intrinsics.dll $builddir\Uno.UI.Composition.dll $builddir\Uno.Xaml.dll $builddir\System.Buffers.dll $builddir\Uno.UI.RemoteControl.Messaging.dll $builddir\Newtonsoft.Json.dll $builddir\Microsoft.IO.RecyclableMemoryStream.dll $builddir\Uno.UI.Runtime.WebAssembly.dll $builddir\Microsoft.Extensions.Logging.Abstractions.dll $builddir\Microsoft.Extensions.Logging.dll $builddir\Microsoft.Extensions.DependencyInjection.Abstractions.dll $builddir\Microsoft.Extensions.Options.dll $builddir\Microsoft.Extensions.Primitives.dll $builddir\System.Resources.ResourceManager.dll $builddir\System.Runtime.Extensions.dll $builddir\System.Threading.Tasks.dll $builddir\Microsoft.Extensions.DependencyInjection.dll $builddir\SkiaSharp.Views.UWP.dll $builddir\SkiaSharp.dll $builddir\System.Diagnostics.Debug.dll $builddir\Uno.UI.Toolkit.dll $builddir\Uno.Core.Extensions.Logging.Singleton.dll $builddir\CommonServiceLocator.dll $builddir\Uno.UI.Adapter.Microsoft.Extensions.Logging.dll $builddir\Uno.UI.FluentTheme.v2.dll $builddir\Uno.Extensions.Logging.WebAssembly.Console.dll 
+  pinvoke_libs=libSystem.Native,libSystem.IO.Compression.Native,libSystem.Globalization.Native,QCall,libSkiaSharp,__Native
+build $appdir/dotnet.js $appdir/dotnet.wasm: emcc-link $builddir/driver.o $builddir/pinvoke.o   corebindings.o   C$:\Users\SaadSharif\.nuget\packages\skiasharp.nativeassets.webassembly\2.88.6\buildTransitive\netstandard1.0\..\..\build\netstandard1.0\libSkiaSharp.a\2.0.23\libSkiaSharp.a  $runtime_libdir/libmono-ee-interp.a $runtime_libdir/libmono-ilgen.a $runtime_libdir/libmono-icall-table.a $runtime_libdir/libmonosgen-2.0.a $runtime_libdir/libSystem.Native.a $runtime_libdir/libSystem.IO.Compression.Native.a $runtime_libdir/libicuuc.a $runtime_libdir/libicui18n.a $runtime_libdir/libmono-component-diagnostics_tracing-static.a $runtime_libdir/libmono-component-hot_reload-static.a $runtime_libdir/libmono-component-debugger-static.a  | C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native/library_mono.js C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native/dotnet_support.js C$:\Users\SaadSharif\AppData\Local\Temp\dotnet-runtime-wasm-windows-bd114dd-53ca85fb900-1877706367-Release\runtimes\browser-wasm\native\binding_support.js $emsdk_env
+  out_js=$appdir/dotnet.js
+  out_wasm=$appdir/dotnet.wasm

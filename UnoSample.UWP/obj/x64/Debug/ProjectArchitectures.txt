@@ -1,0 +1,1 @@
+C:\src\UnoSample\UnoSample.UWP\UnoSample.Uwp.csproj;x64
